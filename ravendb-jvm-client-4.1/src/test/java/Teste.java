@@ -1,42 +1,25 @@
 
-import net.ravendb.client.documents.DocumentStore;
-import net.ravendb.client.documents.IDocumentStore;
-import net.ravendb.client.documents.session.IDocumentSession;
-import net.ravendb.client.documents.session.SessionOptions;
-import net.ravendb.client.documents.session.TransactionMode;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.TimeUnit;
 
 public class Teste {
     static int n_threads = 10;
+    static int i;
     
-    public static void main(String[] args) {
-        int i;
-        for (i=0;i<n_threads;i++){
-        new Thread(server).start();
-        }
-    }
-    
-     private static Runnable server = new Runnable() {
-        public void run() {
-            try{
-                try (IDocumentStore store = new DocumentStore(new String[]{ 
-                    "http://127.0.0.1:8080",
-                    "http://127.0.0.2:8080",
-                    "http://127.0.0.3:8080"}, "Airbnb"))
-                {
-
-                    store.initialize();  
-
-                    Operacoes op = new Operacoes();
-                    SessionOptions sessionOptions = new SessionOptions();
-                    sessionOptions.setTransactionMode(TransactionMode.CLUSTER_WIDE);
-                                        
-                    try (IDocumentSession session = store.openSession(sessionOptions))
-                    {
-                        op.select(session);
-                       // op.update(store);
-                    }        
-                }
-            } catch (Exception e){}
-        }
-    };
+    public static void main(String[] args) throws InterruptedException {
+        long start_time = System.nanoTime();
+        ExecutorService es = Executors.newCachedThreadPool();
+        
+        for (i=0;i <=n_threads;i++){
+            es.execute(new MyRunnable(i, n_threads));    
+        }   
+        es.shutdown();
+        
+        boolean finished = es.awaitTermination(1, TimeUnit.MINUTES);
+        long end_time = System.nanoTime();
+        double difference = (end_time - start_time) / 1e9;
+        
+        System.out.println("Tempo de processamento:" + difference + " segundos ");
+    }      
 }
